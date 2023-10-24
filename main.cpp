@@ -16,10 +16,10 @@ bool search(std::vector<std::vector<char>> &board, std::string word,
 bool isWordFound(std::vector<std::vector<char> > &board, std::string word);
 
 
-bool crosswordGenerator(std::vector<std::vector<char>> &board, 
-                        std::vector<std::string> &positiveKWs, 
-                        std::vector<std::string> &negativeKWs, 
-                        int index);
+bool puzzleGenerator(std::vector<std::vector<char>> &board, 
+                     std::vector<std::string> &positiveKWs, 
+                     std::vector<std::string> &negativeKWs, 
+                     int index);
 
 int main(int argc, char const *argv[])
 {
@@ -32,9 +32,11 @@ int main(int argc, char const *argv[])
     std::vector<std::string> positiveKW = info[1];
     std::vector<std::string> negativeKW = info[2];
     
-    std::vector<std::vector<char> > board = {{ 'p', 'a', 't', 'o', 'e' },
-                                             { 'b', 'a', 'k', 'e', 'r' },
-                                             { 'e', 'c', 'h', 'o', 'o' }};
+    // Initialize board
+    std::vector<std::vector<char> > board(row, std::vector<char>(col, 0));
+
+    puzzleGenerator(board, positiveKW, negativeKW, 0);
+    std::cout << "BOARD: " << std::endl;
     printBoard(board);
     return 0;
 }
@@ -173,10 +175,10 @@ bool isWordFound(std::vector<std::vector<char> > &board, std::string word)
         // if reach end, word cannot be found
         return false;
 }
-bool crosswordGenerator(std::vector<std::vector<char>> &board, 
-                        std::vector<std::string> &positiveKWs, 
-                        std::vector<std::string> &negativeKWs, 
-                        int index)
+bool puzzleGenerator(std::vector<std::vector<char>> &board, 
+                     std::vector<std::string> &positiveKWs, 
+                     std::vector<std::string> &negativeKWs, 
+                     int index)
 {
     // Check board when after going through all positive KWs
     if (index == positiveKWs.size()) 
@@ -195,17 +197,60 @@ bool crosswordGenerator(std::vector<std::vector<char>> &board,
     int rows = board.size();
     int cols = board[0].size();
     std::vector<std::string> directions = {"N", "NE", "E", "SE", "S", "SW", "W", "NW"};
+    // define direction offsets for each cardinal direction
+    std::map<std::string,std::pair<int, int> > calculateOffset = 
+    {
+        {"N" , { -1,  0}},
+        {"NE", { -1,  1}},
+        {"E" , {  0,  1}},
+        {"SE", {  1,  1}},
+        {"S" , {  1,  0}},
+        {"SW", {  1, -1}},
+        {"W" , {  0, -1}},
+        {"NW", { -1, -1}}
+    };
     for(int row = 0; row < rows; row++)
     {
+        std::cout << "Row: " << row << std::endl;
         for(int col = 0; col < cols; col++)
         {
+            std::cout << "Col: " << col << std::endl;
             for(std::string direction : directions)
             {
                 if(isWordInBound(board, positiveKWs[index], row, col, direction))
                 {
-                    
+                    // Place letter of word
+                    int rowOriginal = row;
+                    int colOriginal = col;
+                    for(char letter : positiveKWs[index])
+                    {
+                        std::cout << "Placing Char: " << letter << " From Word: " << positiveKWs[index] << std::endl;
+                        board[row][col] = letter;
+                        printBoard(board);
+                        row = row + calculateOffset[direction].first;
+                        col = col + calculateOffset[direction].second;
+                    }
+
+                    // Recurisvely calls puzzle generator and itterates through until all positive KW are placed
+                    if(puzzleGenerator(board, positiveKWs, negativeKWs, index + 1)) return true;
+
+                    // Backtrack and set letters of word back to blank
+                    row = rowOriginal;
+                    col = colOriginal;
+                    for(char letter : positiveKWs[index])
+                    {
+                        std::cout << "Replacing Char: " << letter << " From Word: " << positiveKWs[index] << std::endl;
+
+                        board[row][col] = ' ';
+                        printBoard(board);
+                        row = row + calculateOffset[direction].first;
+                        col = col + calculateOffset[direction].second;
+                    }
+
                 }
             }
         }
     }
+    
+    return false;
 }
