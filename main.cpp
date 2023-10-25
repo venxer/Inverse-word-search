@@ -55,6 +55,8 @@ int main(int argc, char const *argv[])
     }
 
     puzzleGenerator(board, positiveKW, negativeKW, 0, 0, 0);
+
+    std::cout << std::endl;
     std::cout << "BOARD: " << std::endl;
     printBoard(board);
     return 0;
@@ -288,15 +290,18 @@ bool puzzleGenerator(std::vector<std::vector<char>> &board,
                     int row = x;
                     int col = y;
 
+                    std::vector<char> cannotRemove;
                     // Place letter of word
                     for(char letter : positiveKWs[index])
                     {
                         // std::cout << "Placing Char: " << letter << " From Word: " << positiveKWs[index] << std::endl;
-                        board[row][col] = letter;
+                        if(board[row][col] == ' ' ) board[row][col] = letter;
+                        else cannotRemove.push_back(letter);
                         // printBoard(board);
                         row += calculateOffset[direction].first;
                         col += calculateOffset[direction].second;
                     }
+                    std::cout << "POST PLACE" << std::endl;
                     printBoard(board);
 
                     // Recursively call with next positive keyword
@@ -312,11 +317,17 @@ bool puzzleGenerator(std::vector<std::vector<char>> &board,
                     for(char letter : positiveKWs[index])
                     {
                         // std::cout << "Replacing Char: " << letter << " From Word: " << positiveKWs[index] << std::endl;
-                        board[row][col] = ' ';
+                        std::vector<char>::const_iterator it = std::find(cannotRemove.begin(), cannotRemove.end(), letter);
+                        if(it == cannotRemove.end()) 
+                        {
+                            board[row][col] = ' ';
+                        }
+
                         // printBoard(board);
                         row = row + calculateOffset[direction].first;
                         col = col + calculateOffset[direction].second;
                     }
+                    std::cout << "POST REMOVE" << std::endl;
                     printBoard(board);
                 }
             }
