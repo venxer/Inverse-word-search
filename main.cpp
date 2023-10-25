@@ -11,6 +11,8 @@ void printBoard(std::vector<std::vector<char> > &board);
 std::vector<std::vector<std::string> > fetchInfo(std::ifstream &in_str);
 bool isWordInBound(std::vector<std::vector<char>> &board, std::string word, 
                    int startRow, int startCol, std::string direction);
+bool isOverlap(std::vector<std::vector<char>> &board, std::string word, 
+               int startRow, int startCol, std::string direction);
 bool search(std::vector<std::vector<char>> &board, std::string word, 
             int row, int col, int index, std::string direction);
 bool isWordFound(std::vector<std::vector<char> > &board, std::string word);
@@ -19,7 +21,7 @@ bool isWordFound(std::vector<std::vector<char> > &board, std::string word);
 bool puzzleGenerator(std::vector<std::vector<char>> &board, 
                      std::vector<std::string> &positiveKWs, 
                      std::vector<std::string> &negativeKWs, 
-                     int index);
+                     int index, int row, int col);
 
 int main(int argc, char const *argv[])
 {
@@ -32,10 +34,27 @@ int main(int argc, char const *argv[])
     std::vector<std::string> positiveKW = info[1];
     std::vector<std::string> negativeKW = info[2];
     
+    std::cout << std::endl;
+    std::cout << std::endl;
+    std::cout << std::endl;
+    std::cout << std::endl;
+    std::cout << std::endl;
+    std::cout << std::endl;
+    std::cout << std::endl;
+    std::cout << std::endl;
+    std::cout << std::endl;
+
     // Initialize board
     std::vector<std::vector<char> > board(row, std::vector<char>(col, 0));
+    for(int x = 0; x < board.size(); x++)
+    {
+        for(int y = 0; y < board[x].size(); y++)
+        {
+            board[x][y] = ' ';
+        }
+    }
 
-    puzzleGenerator(board, positiveKW, negativeKW, 0);
+    puzzleGenerator(board, positiveKW, negativeKW, 0, 0, 0);
     std::cout << "BOARD: " << std::endl;
     printBoard(board);
     return 0;
@@ -50,6 +69,7 @@ T validateFile(std::string fileName)
 }
 void printBoard(std::vector<std::vector<char> > &board)
 {
+    std::cout << "-----" << std::endl;
     for(int x = 0; x < board.size(); x++)
     {
         for(int y = 0; y < board[x].size(); y++)
@@ -58,6 +78,8 @@ void printBoard(std::vector<std::vector<char> > &board)
         }
         std::cout << std::endl;
     }
+    std::cout << "-----" << std::endl;
+
 }
 std::vector<std::vector<std::string> > fetchInfo(std::ifstream &in_str)
 {
@@ -116,6 +138,46 @@ bool isWordInBound(std::vector<std::vector<char>> &board, std::string word,
     // Check if word is out of bound if placed
     return startRow <= rowBound && startCol <= colBound &&
            startRow >= -1 && startCol >= -1;
+}
+bool isOverlap(std::vector<std::vector<char>> &board, std::string word, 
+               int startRow, int startCol, std::string direction)
+{
+    // define direction offsets for each cardinal direction
+    std::map<std::string,std::pair<int, int> > calculateOffset = 
+    {
+        {"N" , { -1,  0}},
+        {"NE", { -1,  1}},
+        {"E" , {  0,  1}},
+        {"SE", {  1,  1}},
+        {"S" , {  1,  0}},
+        {"SW", {  1, -1}},
+        {"W" , {  0, -1}},
+        {"NW", { -1, -1}}
+    };
+
+    for (char letter : word) 
+    {
+        // Check bounds 
+        if (startRow >= 0 && startRow < board.size() && startCol >= 0 && startCol < board[0].size()) 
+        {
+            // Check if the current character on the board matches the character from the word
+            if (board[startRow][startCol] != ' ' && board[startRow][startCol] != letter) 
+            {
+                return true;
+            }
+        } 
+        else 
+        {
+            // The word goes out of bounds, return true
+            return true; 
+        }
+
+        startRow += calculateOffset[direction].first;
+        startCol += calculateOffset[direction].second;
+    }
+    return false;
+
+
 }
 bool search(std::vector<std::vector<char>> &board, std::string word, int row, int col, int index, std::string direction)
 {
@@ -178,7 +240,7 @@ bool isWordFound(std::vector<std::vector<char> > &board, std::string word)
 bool puzzleGenerator(std::vector<std::vector<char>> &board, 
                      std::vector<std::string> &positiveKWs, 
                      std::vector<std::string> &negativeKWs, 
-                     int index)
+                     int index, int row, int col)
 {
     // Check board when after going through all positive KWs
     if (index == positiveKWs.size()) 
@@ -188,12 +250,13 @@ bool puzzleGenerator(std::vector<std::vector<char>> &board,
         {
             if (isWordFound(board, word)) 
             {
+                std::cout << "NEGATIVE KW FOUND" << std::endl;
                 return false;
             }
         }
         return true;
     }
-
+    std::cout << "WORD: " << positiveKWs[index] << std:: endl;
     int rows = board.size();
     int cols = board[0].size();
     std::vector<std::string> directions = {"N", "NE", "E", "SE", "S", "SW", "W", "NW"};
@@ -209,48 +272,57 @@ bool puzzleGenerator(std::vector<std::vector<char>> &board,
         {"W" , {  0, -1}},
         {"NW", { -1, -1}}
     };
-    for(int row = 0; row < rows; row++)
+    
+    int rowOriginal = row;
+    int colOriginal = col;
+
+    for(std::string direction : directions)
     {
-        std::cout << "Row: " << row << std::endl;
-        for(int col = 0; col < cols; col++)
+        for(int x = 0; x < rows; x++)
         {
-            std::cout << "Col: " << col << std::endl;
-            for(std::string direction : directions)
-            {
-                if(isWordInBound(board, positiveKWs[index], row, col, direction))
+            for(int y = 0; y < cols; y++)
+            {   
+                if(isWordInBound(board, positiveKWs[index], x, y, direction) &&
+                   !isOverlap(board, positiveKWs[index], x, y, direction))
                 {
+                    int row = x;
+                    int col = y;
+
                     // Place letter of word
-                    int rowOriginal = row;
-                    int colOriginal = col;
                     for(char letter : positiveKWs[index])
                     {
-                        std::cout << "Placing Char: " << letter << " From Word: " << positiveKWs[index] << std::endl;
+                        // std::cout << "Placing Char: " << letter << " From Word: " << positiveKWs[index] << std::endl;
                         board[row][col] = letter;
-                        printBoard(board);
-                        row = row + calculateOffset[direction].first;
-                        col = col + calculateOffset[direction].second;
+                        // printBoard(board);
+                        row += calculateOffset[direction].first;
+                        col += calculateOffset[direction].second;
+                    }
+                    printBoard(board);
+
+                    // Recursively call with next positive keyword
+                    if (puzzleGenerator(board, positiveKWs, negativeKWs, index + 1, rowOriginal, colOriginal)) 
+                    {
+                        // True if word is successfully placed
+                        return true;
                     }
 
-                    // Recurisvely calls puzzle generator and itterates through until all positive KW are placed
-                    if(puzzleGenerator(board, positiveKWs, negativeKWs, index + 1)) return true;
-
-                    // Backtrack and set letters of word back to blank
-                    row = rowOriginal;
-                    col = colOriginal;
+                    //Backtrack and set letters of word back to blank
+                    row = x;
+                    col = y;
                     for(char letter : positiveKWs[index])
                     {
-                        std::cout << "Replacing Char: " << letter << " From Word: " << positiveKWs[index] << std::endl;
-
+                        // std::cout << "Replacing Char: " << letter << " From Word: " << positiveKWs[index] << std::endl;
                         board[row][col] = ' ';
-                        printBoard(board);
+                        // printBoard(board);
                         row = row + calculateOffset[direction].first;
                         col = col + calculateOffset[direction].second;
                     }
-
+                    printBoard(board);
                 }
             }
         }
     }
-    
+    // row = rowOriginal;
+    // col = colOriginal;  
     return false;
 }
