@@ -5,27 +5,160 @@
 #include <map>
 #include <algorithm>
 
+//TO-DO: Mirror boards
+/**
+ * Check if file can successfully be opened
+ * 
+ * @param fileName name of file to be opened
+ * 
+ * return the opened file stream
+ */
 template<typename T>
 T validateFile(std::string fileName);
+/**
+ * 
+ * 
+ */
 void printBoard(std::vector<std::vector<char> > &board);
-
+/**
+ * Reads the input stream and organize the information into vectors
+ * 1st vector: dimension
+ * 2nd vector: positive KWs 
+ * 3rd vector: negative KWs
+ * 
+ * @param in_str Input File stream to read data from
+ * 
+ * @return 2D vector with dimension and positive KWs and negative KWs organized
+ */
 std::vector<std::vector<std::string> > fetchInfo(std::ifstream &in_str);
+/**
+ * Initializes a board by setting all cells to (' ')
+ * 
+ * @param board 2D vector representing the board
+ */
+void initlaizeBoard(std::vector<std::vector<char> > &board);
+/**
+ * Check to see if a word can fit within the bounds of the board given the start
+ * position and direction
+ * 
+ * @param board 2D vector representing the board
+ * @param word Word to be placed on the board
+ * @param startRow Start row of the word
+ * @param startCol Start col of the word
+ * @param direction Cardinal direction for word to be placed (N, NE, E, SE, S, SW, W, NW, N)
+ * 
+ * @return True if word fits within the bound. False otherwise
+ */
 bool isWordInBound(std::vector<std::vector<char> > &board, std::string word, 
                    int startRow, int startCol, std::string direction);
+/**
+ * Check to see if a word will overlap with existing letters on the board given the start
+ * position direction
+ * 
+ * @param board 2D vector representing the board
+ * @param word Word to be placed on the board
+ * @param startRow Start row of the word
+ * @param startCol Start col of the word
+ * @param direction Cardinal direction for word to be placed (N, NE, E, SE, S, SW, W, NW)
+ * 
+ * @return True is there is an overlap. False otherwise
+ */
 bool isOverlap(std::vector<std::vector<char> > &board, std::string word, 
                int startRow, int startCol, std::string direction);
+/**
+ * Recursive function to search for a word starting from a specific position in a given direction.
+ *
+ * @param board 2D vector representing the board
+ * @param word Word to be searched for on the board
+ * @param row Current row position on board
+ * @param col Current col position on board
+ * @param wordIndex Current index of word being searched
+ * @param direction Cardinal direction to search in (N, NE, E, SE, S, SW, W, NW)
+ * 
+ * @return True if the word is found. False otherwise.
+ */
 bool search(std::vector<std::vector<char> > &board, std::string word, 
             int row, int col, int wordIndex, std::string direction);
+/**
+ * Checks if a word can be found on the board in any cardinal direction
+ * 
+ * @param board 2D vector representing the board
+ * @param word Word to be searched for on the board
+ * 
+ * @return True if word is found. False otherwise
+ */
 bool isWordFound(std::vector<std::vector<char> > &board, std::string word);
+/**
+ * Checks board for any occurence of negative KWs
+ * 
+ * @param board 2D vector representing the board
+ * @param negativeKWs Vector of strings of negative KWs
+ * 
+ * @return True if any negative KW is found in the board. False otherwise
+ */
 bool includesNegativeKWs(std::vector<std::vector<char>> &board, std::vector<std::string> &negativeKWs);
+/**
+ * Validates board by making sure that all positive KWs are included 
+ * and no negative KWs are included
+ * 
+ * @param board 2D vector representing the board
+ * @param positiveKWs Vector of strings of positive KWs
+ * @param negativeKWs Vector of strings of negative KWs
+ */
+bool isValidBoard(std::vector<std::vector<char> > &board, const std::vector<std::string> &positiveKWs, 
+                                                          const std::vector<std::string> &negativeKWs);
+/**
+ * Generates a puzzle board where all positive KWs are on the board, 
+ * avoiding negative KWs
+ * 
+ * @param board 2D vector representing the board
+ * @param positiveKWs Vector of strings of positive KWs
+ * @param negativeKWs Vector of strings of negative KWs
+ * @param index Index of current positive KW
+ * @param row Current position of row for placing word
+ * @param col Current position of col for placing word
+ *
+ * @return True if puzzle is successfully generated. False otherwise
+ */
 bool puzzleGenerator(std::vector<std::vector<char> > &board, 
                      std::vector<std::string> &positiveKWs, 
                      std::vector<std::string> &negativeKWs, 
                      int index, int row, int col);
-void generateBoard(std::vector<std::vector<char>> &board, std::vector<std::string> negativeKWs,
+/**
+ * Generates a list of potential boards by filling empty cells with 
+ * letters from 'a' to 'z'
+ * 
+ * @param board 2D vector representing the board
+ * @param negativeKWs Vector of strings of negative KWs
+ * @param row Current position of row for placing letter
+ * @param col Current position of col for placing letter
+ * @param boards A 3D vector that stores all valid boards
+ */
+void generateBoards(std::vector<std::vector<char>> &board, std::vector<std::string> negativeKWs,
                    int row, int col, std::vector<std::vector<std::vector<char> > >&boards);
+void reverseRow(std::vector<std::vector<char> > board, int col);
+void reverseCol(std::vector<std::vector<char> > board, int row);
+/**
+ * Prints a single solution to the output stream 
+ * 
+ * @param boards 3D vector of all possible boards
+ * @param out_str Output file stream to write the board to
+ */
+void printSingleSolution(const std::vector<std::vector<std::vector<char> > > &boards, std::ofstream &out_str);
+/**
+ * Prints all solutions to the output stream 
+ * 
+ * @param 3D vector of all possible boards
+ * @param Output file stream to write the boards to
+ */
+void printAllSolution(const std::vector<std::vector<std::vector<char> > > &boards, std::ofstream &out_str);
 int main(int argc, char const *argv[])
 {
+    if(argc != 4) 
+    {
+        std::cerr << "Invalid Argument Count" << std::endl;
+        exit(1);
+    }
     std::ifstream inputFile = validateFile<std::ifstream>(argv[1]);
     std::ofstream outputFile = validateFile<std::ofstream>(argv[2]);
     std::vector<std::vector<std::string> > info =  fetchInfo(inputFile);
@@ -34,45 +167,31 @@ int main(int argc, char const *argv[])
     int row = stoi(info[0][1]);
     std::vector<std::string> positiveKW = info[1];
     std::vector<std::string> negativeKW = info[2];
-    
-    std::cout << std::endl;
-    std::cout << std::endl;
-    std::cout << std::endl;
-    std::cout << std::endl;
-    std::cout << std::endl;
-    std::cout << std::endl;
-    std::cout << std::endl;
-    std::cout << std::endl;
-    std::cout << std::endl;
+    std::string mode = argv[3];
 
     // Initialize board
     std::vector<std::vector<char> > board(row, std::vector<char>(col, 0));
-    for(int x = 0; x < board.size(); x++)
-    {
-        for(int y = 0; y < board[x].size(); y++)
-        {
-            board[x][y] = ' ';
-        }
-    }
+    initlaizeBoard(board);
 
+    // Generate Board where all +KWs fit with no -KWs
     puzzleGenerator(board, positiveKW, negativeKW, 0, 0, 0);
+    
+    // Fill it empty blank cells and generate all combinations of letters that can be placed
     std::vector<std::vector<std::vector<char> > > allBoards;
+    generateBoards(board, negativeKW, 0, 0, allBoards);
 
-
-    std::cout << std::endl;
-    std::cout << "BOARD: " << std::endl;
-    printBoard(board);
-
-    generateBoard(board, negativeKW, 0, 0, allBoards);
-    int count = 1;
-    for(auto board : allBoards)
+    if(mode == "one_solution")
     {
-        std::cout << "======" << std::endl;
-        std::cout << count << std::endl;
-        printBoard(board);
-        std::cout << "======" << std::endl;
-        count++;    
-
+        printSingleSolution(allBoards, outputFile);
+    }
+    else if(mode == "all_solutions")
+    {
+        printAllSolution(allBoards, outputFile);
+    }
+    else 
+    {
+        std::cerr << "Invalid Mode" << std::endl;
+        exit(1);
     }
 
     return 0;
@@ -82,7 +201,7 @@ template<typename T>
 T validateFile(std::string fileName)
 {
     T stream(fileName);
-    if(!stream.good()) std::cerr << "Infile File" << std::endl;
+    if(!stream.good()) std::cerr << "File Error" << std::endl;
     return stream;
 }
 void printBoard(std::vector<std::vector<char> > &board)
@@ -130,13 +249,24 @@ std::vector<std::vector<std::string> > fetchInfo(std::ifstream &in_str)
 
     return output;
 }
+void initlaizeBoard(std::vector<std::vector<char> > &board)
+{
+    // Iterates through each cell of board
+    for(int x = 0; x < board.size(); x++)
+    {
+        for(int y = 0; y < board[x].size(); y++)
+        {
+            board[x][y] = ' ';
+        }
+    }
+}
 bool isWordInBound(std::vector<std::vector<char> > &board, std::string word, 
                    int startRow, int startCol, std::string direction)
 {
     int rowBound = board.size();
     int colBound = board[0].size();
 
-    // define direction offsets for each cardinal direction
+    // Define direction offsets for each cardinal direction
     std::map<std::string,std::pair<int, int> > calculateOffset = 
     {
         {"N" , { -1 * word.length(),  0                }},
@@ -256,10 +386,11 @@ bool isWordFound(std::vector<std::vector<char> > &board, std::string word)
                 return true;
             }
         }
-        // If reach end, word cannot be found
+        // If entire board has been searched
         return false;
 }
-bool includesNegativeKWs(std::vector<std::vector<char>> &board, std::vector<std::string> &negativeKWs)
+bool includesNegativeKWs( std::vector<std::vector<char>> &board, std::vector<std::string> &negativeKWs)
+
 {
     // Iterates though all negativeKWs
     for(std::string word : negativeKWs) 
@@ -271,6 +402,21 @@ bool includesNegativeKWs(std::vector<std::vector<char>> &board, std::vector<std:
         }
     }
     return false;
+}
+bool isValidBoard(std::vector<std::vector<char> > &board, const std::vector<std::string> &positiveKWs, 
+                                                          const std::vector<std::string> &negativeKWs)
+{
+    for(std::string word : positiveKWs)
+    {
+        // Positive KW is NOT found
+        if(!isWordFound(board, word)) return false;
+    }
+    for(std::string word : negativeKWs)
+    {
+        // Negative KW is found
+        if(isWordFound(board, word)) return false;
+    }
+    return true;
 }
 bool puzzleGenerator(std::vector<std::vector<char> > &board, 
                      std::vector<std::string> &positiveKWs, 
@@ -360,8 +506,8 @@ bool puzzleGenerator(std::vector<std::vector<char> > &board,
     }
     return false;
 }
-void generateBoard(std::vector<std::vector<char>> &board, std::vector<std::string> negativeKWs,
-                   int row, int col, std::vector<std::vector<std::vector<char> > > &boards)
+void generateBoards(std::vector<std::vector<char>> &board, std::vector<std::string> negativeKWs,
+                    int row, int col, std::vector<std::vector<std::vector<char> > > &boards)
 {
     // Add board to boards once it has iterated through all rows of the board
     if(row == board.size())
@@ -394,7 +540,7 @@ void generateBoard(std::vector<std::vector<char>> &board, std::vector<std::strin
         {
             board[row][col] = character;
             // Recur to the next cell
-            generateBoard(board, negativeKWs, nextRow, nextCol, boards);
+            generateBoards(board, negativeKWs, nextRow, nextCol, boards);
             // Reset the cell back to empty for the next iteration
             board[row][col] = ' ';
         }
@@ -402,6 +548,46 @@ void generateBoard(std::vector<std::vector<char>> &board, std::vector<std::strin
     else
     {
         // Move onto next cell if cell already has a letter
-        generateBoard(board, negativeKWs, nextRow, nextCol, boards);
+        generateBoards(board, negativeKWs, nextRow, nextCol, boards);
+    }
+}
+
+void generateMirrorBoards(std::vector<std::vector<char>> &boards)
+{
+    int numBoards = boards.size();
+    for(int x = 0; x < numBoards; x++)
+    {
+        
+    }
+}
+void printSingleSolution(const std::vector<std::vector<std::vector<char> > > &boards, std::ofstream &out_str)
+{
+    out_str << "Board: \n";
+    for(std::vector<char> row : boards[0])
+    {
+        out_str << "  ";
+        for(char letter : row)
+        {
+            out_str << letter;
+        }
+        out_str << "\n";
+    }
+    
+}
+void printAllSolution(const std::vector<std::vector<std::vector<char> > > &boards, std::ofstream &out_str)
+{
+    out_str << boards.size() << " solution(s)\n";
+    for(std::vector<std::vector<char> > board : boards)
+    {
+        out_str << "Board: \n";
+        for(std::vector<char> row : board)
+        {
+            out_str << "  ";
+            for(char letter : row)
+            {
+                out_str << letter;
+            }
+            out_str << "\n";
+        }
     }
 }
