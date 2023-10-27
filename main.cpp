@@ -4,7 +4,7 @@
 #include <string>
 #include <map>
 #include <algorithm>
-
+#include <map>
 //TO-DO: Mirror boards
 /**
  * Check if file can successfully be opened
@@ -15,11 +15,6 @@
  */
 template<typename T>
 T validateFile(std::string fileName);
-/**
- * 
- * 
- */
-void printBoard(std::vector<std::vector<char> > &board);
 /**
  * Reads the input stream and organize the information into vectors
  * 1st vector: dimension
@@ -136,8 +131,41 @@ bool puzzleGenerator(std::vector<std::vector<char> > &board,
  */
 void generateBoards(std::vector<std::vector<char>> &board, std::vector<std::string> negativeKWs,
                    int row, int col, std::vector<std::vector<std::vector<char> > >&boards);
-void reverseRow(std::vector<std::vector<char> > board, int col);
-void reverseCol(std::vector<std::vector<char> > board, int row);
+/**
+ * Generate a copy of the horizontal reflection of the board
+ * 
+ * @param board 2D vector representing the board
+ * 
+ * @return 2D vector representing the board after horizontal reflection
+ */
+std::vector<std::vector<char> > generateHorizontalReflection(const std::vector<std::vector<char> > &board);
+/**
+ * Generate a copy of the vertical reflection of the board
+ * 
+ * @param board 2D vector representing the board
+ * 
+ * @return 2D vector representing the board after vertical reflection
+ */
+std::vector<std::vector<char> > generateVerticalReflection(const std::vector<std::vector<char> > &board);
+/**
+ * Rotate 2D vector by 90 degrees clockwise
+ * 
+ * @param board 2D vector representing the board
+ * 
+ * @return 2D vector representing the board after 90 degree rotation
+ */
+std::vector<std::vector<char> > rotateBoard(const std::vector<std::vector<char> > &board);
+/**
+ * Generate all possible reflections without duplicates
+ * 
+ * @param boards 2D vector representing possible boards before reflection
+ *               Reflected boards will be pushed into this at the end
+ * @param positiveKWs Vector of strings of positive KWs
+ * @param negativeKWs Vector of strings of negative KWs 
+ */
+void generateReflections(std::vector<std::vector<std::vector<char> > > &boards, 
+                         const std::vector<std::string> &positiveKWs, 
+                         const std::vector<std::string> &negativeKWs);
 /**
  * Prints a single solution to the output stream 
  * 
@@ -186,6 +214,7 @@ int main(int argc, char const *argv[])
     }
     else if(mode == "all_solutions")
     {
+        generateReflections(allBoards, positiveKW, negativeKW);
         printAllSolution(allBoards, outputFile);
     }
     else 
@@ -194,6 +223,8 @@ int main(int argc, char const *argv[])
         exit(1);
     }
 
+    inputFile.close();
+    outputFile.close();
     return 0;
 }
 
@@ -203,20 +234,6 @@ T validateFile(std::string fileName)
     T stream(fileName);
     if(!stream.good()) std::cerr << "File Error" << std::endl;
     return stream;
-}
-void printBoard(std::vector<std::vector<char> > &board)
-{
-    std::cout << "-----" << std::endl;
-    for(int x = 0; x < board.size(); x++)
-    {
-        for(int y = 0; y < board[x].size(); y++)
-        {
-            std::cout << board[x][y];
-        }
-        std::cout << std::endl;
-    }
-    std::cout << "-----" << std::endl;
-
 }
 std::vector<std::vector<std::string> > fetchInfo(std::ifstream &in_str)
 {
@@ -551,14 +568,126 @@ void generateBoards(std::vector<std::vector<char>> &board, std::vector<std::stri
         generateBoards(board, negativeKWs, nextRow, nextCol, boards);
     }
 }
-
-void generateMirrorBoards(std::vector<std::vector<char>> &boards)
+std::vector<std::vector<char> > generateHorizontalReflection(const std::vector<std::vector<char> > &board)
 {
-    int numBoards = boards.size();
-    for(int x = 0; x < numBoards; x++)
+    std::vector<std::vector<char> > boardCopy = board;
+    // Reverse rows
+    std::reverse(boardCopy.begin(), boardCopy.end());
+    return boardCopy;
+}
+std::vector<std::vector<char>> generateVerticalReflection(const std::vector<std::vector<char> > &board)
+{
+    std::vector<std::vector<char> > boardCopy = board;
+    for(std::vector<char> &row : boardCopy)
     {
+        // Reverse col in each row
+        std::reverse(row.begin(), row.end());
+    }
+    return boardCopy;
+
+}
+std::vector<std::vector<char> > rotateBoard(const std::vector<std::vector<char> > &board)
+{
+    int rows = board.size();
+    int cols = board[0].size();
+    std::vector<std::vector<char> > boardCopy = board;
+    // Transpose
+    for (int x = 0; x < rows; x++) 
+    {
+        for (int y = x; y < cols; y++) 
+        {
+            std::swap(boardCopy[x][y], boardCopy[y][x]);
+        }
+    }
+    
+    // Reverse
+    for(std::vector<char> row : boardCopy)
+    {
+        std::reverse(boardCopy.begin(), boardCopy.end());
+    }
+    return boardCopy;
+}
+
+void generateReflections(std::vector<std::vector<std::vector<char> > > &boards, 
+                         const std::vector<std::string> &positiveKWs, 
+                         const std::vector<std::string> &negativeKWs)
+{
+    std::map<std::vector<std::vector<char> >, bool> boardMap;
+    std::vector<std::vector<std::vector<char> > > uniqueBoards;
+
+    for(std::vector<std::vector<char> > &board : boards)
+    {
+        // Add original board to map
+        if(boardMap.find(board) == boardMap.end())
+        {
+            boardMap[board] = true;
+        }
+
+        // Horizontal Reflection
+        std::vector<std::vector<char> > horiReflection = generateHorizontalReflection(board);
+        if(isValidBoard(horiReflection, positiveKWs, negativeKWs))
+        {
+            // If board does not exist
+            if(boardMap.find(horiReflection) == boardMap.end())
+            {
+                // Add board to map and vector of unique boards
+                boardMap[horiReflection] = true;
+                uniqueBoards.push_back(horiReflection);
+            }
+        }
+
+        // Vertical Reflection
+        std::vector<std::vector<char> > vertReflection = generateVerticalReflection(board);
+        if(isValidBoard(vertReflection, positiveKWs, negativeKWs))
+        {
+            // If board does not exist
+            if(boardMap.find(vertReflection) == boardMap.end())
+            {
+                // Add board to map and vector of unique boards
+                boardMap[vertReflection] = true;
+                uniqueBoards.push_back(vertReflection);
+            }
+        }
+        
+        // Horizontal + Vertical Reflection
+        std::vector<std::vector<char> > hori_vert_Reflection = generateHorizontalReflection(generateVerticalReflection(board));
+        if(isValidBoard(hori_vert_Reflection, positiveKWs, negativeKWs))
+        {
+            // If board does not exist
+            if(boardMap.find(hori_vert_Reflection) == boardMap.end())
+            {
+                // Add board to map and vector of unique boards
+                boardMap[hori_vert_Reflection] = true;
+                uniqueBoards.push_back(hori_vert_Reflection);
+            }
+        }
+
+        // Rotate Board if row and col are same size
+        if(board.size() == board[0].size())
+        {
+            int count = uniqueBoards.size();
+            for(int x = 0; x < count; x++)
+            {
+                std::vector<std::vector<char> > rotatedBoard = uniqueBoards[x];
+                for(int y = 0; y < 4; y++)
+                {
+                    rotatedBoard = rotateBoard(rotatedBoard);
+                    // If board does not exist
+                    if(isValidBoard(rotatedBoard, positiveKWs, negativeKWs) &&
+                       boardMap.find(rotatedBoard) == boardMap.end())
+                    {
+                        // Add board to map and vector of unique boards
+                        boardMap[rotatedBoard] = true;
+                        uniqueBoards.push_back(rotatedBoard);
+                    }
+                }
+            }
+            
+        }
         
     }
+    // Concat unique reflected boards to original boards
+    boards.insert(boards.end(), uniqueBoards.begin(), uniqueBoards.end());
 }
 void printSingleSolution(const std::vector<std::vector<std::vector<char> > > &boards, std::ofstream &out_str)
 {
