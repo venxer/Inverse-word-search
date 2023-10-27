@@ -4,8 +4,7 @@
 #include <string>
 #include <map>
 #include <algorithm>
-#include <map>
-//TO-DO: Mirror boards
+#include <chrono>
 /**
  * Check if file can successfully be opened
  * 
@@ -182,6 +181,10 @@ void printSingleSolution(const std::vector<std::vector<std::vector<char> > > &bo
 void printAllSolution(const std::vector<std::vector<std::vector<char> > > &boards, std::ofstream &out_str);
 int main(int argc, char const *argv[])
 {
+    // TIME TAKES TO RUN PROGRAM
+    // Start Timer
+    // std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
+
     if(argc != 4) 
     {
         std::cerr << "Invalid Argument Count" << std::endl;
@@ -225,6 +228,14 @@ int main(int argc, char const *argv[])
 
     inputFile.close();
     outputFile.close();
+
+    // // TIME TAKES TO RUN PROGRAM
+    // // Stop time
+    // std::chrono::high_resolution_clock::time_point stop = std::chrono::high_resolution_clock::now();
+    // // Calculate time diff
+    // std::chrono::microseconds duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+    // std::cout << "Time taken by function: " << duration.count() << " microseconds" << std::endl;
+
     return 0;
 }
 
@@ -590,20 +601,15 @@ std::vector<std::vector<char> > rotateBoard(const std::vector<std::vector<char> 
 {
     int rows = board.size();
     int cols = board[0].size();
-    std::vector<std::vector<char> > boardCopy = board;
-    // Transpose
+    std::vector<std::vector<char>> boardCopy(cols, std::vector<char>(rows));
+    // Iterates though 2D vector
     for (int x = 0; x < rows; x++) 
     {
-        for (int y = x; y < cols; y++) 
+        for (int y = 0; y < cols; y++) 
         {
-            std::swap(boardCopy[x][y], boardCopy[y][x]);
+            // Transpose each cell 90 degrees clockwise
+            boardCopy[y][x] = board[rows - x - 1][y];
         }
-    }
-    
-    // Reverse
-    for(std::vector<char> row : boardCopy)
-    {
-        std::reverse(boardCopy.begin(), boardCopy.end());
     }
     return boardCopy;
 }
