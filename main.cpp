@@ -90,7 +90,7 @@ bool isWordFound(std::vector<std::vector<char> > &board, std::string word);
  * 
  * @return True if any negative KW is found in the board. False otherwise
  */
-bool includesNegativeKWs(std::vector<std::vector<char>> &board, std::vector<std::string> &negativeKWs);
+bool includesNegativeKWs(std::vector<std::vector<char> > &board, std::vector<std::string> &negativeKWs);
 /**
  * Validates board by making sure that all positive KWs are included 
  * and no negative KWs are included
@@ -128,7 +128,7 @@ bool puzzleGenerator(std::vector<std::vector<char> > &board,
  * @param col Current position of col for placing letter
  * @param boards A 3D vector that stores all valid boards
  */
-void generateBoards(std::vector<std::vector<char>> &board, std::vector<std::string> negativeKWs,
+void generateBoards(std::vector<std::vector<char> > &board, std::vector<std::string> negativeKWs,
                    int row, int col, std::vector<std::vector<std::vector<char> > >&boards);
 /**
  * Generate a copy of the horizontal reflection of the board
@@ -154,6 +154,15 @@ std::vector<std::vector<char> > generateVerticalReflection(const std::vector<std
  * @return 2D vector representing the board after 90 degree rotation
  */
 std::vector<std::vector<char> > rotateBoard(const std::vector<std::vector<char> > &board);
+/**
+ * Reverse individual rows of a 2D vector
+ * 
+ * @param board 2D vector representing the board
+ * @param row index of row to be reversed
+ * 
+ * @return 2D vector representing the board after a specific row is reversed
+ */
+std::vector<std::vector<char> > reverseRow(const std::vector<std::vector<char> > &board, int row);
 /**
  * Generate all possible reflections without duplicates
  * 
@@ -417,7 +426,7 @@ bool isWordFound(std::vector<std::vector<char> > &board, std::string word)
         // If entire board has been searched
         return false;
 }
-bool includesNegativeKWs( std::vector<std::vector<char>> &board, std::vector<std::string> &negativeKWs)
+bool includesNegativeKWs( std::vector<std::vector<char> > &board, std::vector<std::string> &negativeKWs)
 
 {
     // Iterates though all negativeKWs
@@ -534,7 +543,7 @@ bool puzzleGenerator(std::vector<std::vector<char> > &board,
     }
     return false;
 }
-void generateBoards(std::vector<std::vector<char>> &board, std::vector<std::string> negativeKWs,
+void generateBoards(std::vector<std::vector<char> > &board, std::vector<std::string> negativeKWs,
                     int row, int col, std::vector<std::vector<std::vector<char> > > &boards)
 {
     // Add board to boards once it has iterated through all rows of the board
@@ -586,7 +595,7 @@ std::vector<std::vector<char> > generateHorizontalReflection(const std::vector<s
     std::reverse(boardCopy.begin(), boardCopy.end());
     return boardCopy;
 }
-std::vector<std::vector<char>> generateVerticalReflection(const std::vector<std::vector<char> > &board)
+std::vector<std::vector<char> > generateVerticalReflection(const std::vector<std::vector<char> > &board)
 {
     std::vector<std::vector<char> > boardCopy = board;
     for(std::vector<char> &row : boardCopy)
@@ -601,7 +610,7 @@ std::vector<std::vector<char> > rotateBoard(const std::vector<std::vector<char> 
 {
     int rows = board.size();
     int cols = board[0].size();
-    std::vector<std::vector<char>> boardCopy(cols, std::vector<char>(rows));
+    std::vector<std::vector<char> > boardCopy(cols, std::vector<char>(rows));
     // Iterates though 2D vector
     for (int x = 0; x < rows; x++) 
     {
@@ -613,7 +622,12 @@ std::vector<std::vector<char> > rotateBoard(const std::vector<std::vector<char> 
     }
     return boardCopy;
 }
-
+std::vector<std::vector<char> > reverseRow(const std::vector<std::vector<char> > &board, int row)
+{
+    std::vector<std::vector<char> > boardCopy = board;
+    std::reverse(boardCopy[row].begin(), boardCopy[row].end());
+    return boardCopy;
+}
 void generateReflections(std::vector<std::vector<std::vector<char> > > &boards, 
                          const std::vector<std::string> &positiveKWs, 
                          const std::vector<std::string> &negativeKWs)
@@ -668,10 +682,11 @@ void generateReflections(std::vector<std::vector<std::vector<char> > > &boards,
             }
         }
 
+        int count = 0;
         // Rotate Board if row and col are same size
         if(board.size() == board[0].size())
         {
-            int count = uniqueBoards.size();
+            count = uniqueBoards.size();
             for(int x = 0; x < count; x++)
             {
                 std::vector<std::vector<char> > rotatedBoard = uniqueBoards[x];
@@ -688,7 +703,26 @@ void generateReflections(std::vector<std::vector<std::vector<char> > > &boards,
                     }
                 }
             }
-            
+        }
+
+        // Reverse Individual Rows
+        count = uniqueBoards.size();
+        // For each board
+        for(int x = 0; x < count; x++)
+        {
+            std::vector<std::vector<char> > boardCopy;
+            // For each row
+            for(int y = 0; y < uniqueBoards[x].size(); y++)
+            {
+                boardCopy = reverseRow(uniqueBoards[x], y);
+                if(isValidBoard(boardCopy, positiveKWs, negativeKWs) &&
+                   boardMap.find(boardCopy) == boardMap.end())
+                {
+                    // Add board to map and vector of unique boards
+                    boardMap[boardCopy] = true;
+                    uniqueBoards.push_back(boardCopy);
+                }
+            }
         }
         
     }
